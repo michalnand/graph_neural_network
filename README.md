@@ -11,6 +11,14 @@
 - after 500 steps, model is reloaded and add new noise from randomizer
 - and result is rendered
 
+the Euler solver is solving 2nd order dif eqautions (from Newtons law F=ma)
+```
+v(n+1) = v(n) + f(n) dt #velocity is integral of force/mass (unit mass used)
+x(n+1) = x(n) + v(n) dt #position is integral of velocity
+```
+implementation is in **libs_common.physical_model**, 
+note : lines v(n+1) and x(n+1) are swapped in code, for better stability
+
 ```python
 #./rbc_model_test.py
 import libs_common
