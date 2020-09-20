@@ -62,16 +62,32 @@ class PhysicalModel:
         self.x[2] = force.clone()
         self.x[1] = self.x[1] + self.x[2]*dt
         self.x[0] = self.x[0] + self.x[1]*dt
-
+ 
         self.x = torch.transpose(self.x, 0, 1)
  
     def get_center_of_mass(self):
-        #TODO
-        pass
+
+        x = torch.transpose(self.x, 1, 0)
+
+        position = x[0].mean(dim=0)
+        velocity = x[1].mean(dim=0)
+        force    = x[2].mean(dim=0)
+
+        return position, velocity, force
+
 
     def get_volume(self):
-        #TODO
-        return 0
+        center, _, _ = self.get_center_of_mass()
+
+        position = torch.transpose(self.x, 1, 0)[0]
+
+        position = position - center
+
+        v = torch.norm(position, dim=1)**3
+
+        volume = v.mean()
+
+        return volume
 
     def get_surface(self):
         #TODO

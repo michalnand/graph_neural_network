@@ -34,7 +34,7 @@ class RenderModel:
         return 0
 
     
-    def render(self, points, edges):
+    def render(self, points, points_initial, edges):
         aspect = self.width/self.height
         glViewport(0, 0, 2*self.width, 2*self.height)
         glMatrixMode(GL_PROJECTION)
@@ -51,22 +51,25 @@ class RenderModel:
         glClearColor(0, 0, 0, 0)
         
 
-        self._render(points, edges)
+        self._render(points, points_initial, edges)
 
         glfw.swap_buffers(self.window)
         glfw.poll_events()
 
         return glfw.window_should_close(self.window)
 
-    def _render(self, points, edges):
+    def _render(self, points, points_initial, edges):
         
         points = numpy.rollaxis(points, 1, 0) 
         points = numpy.rollaxis(points, 2, 1)  
-
         position = points[0]
 
-        max = numpy.max(position)
-        min = numpy.min(position)
+        points_initial = numpy.rollaxis(points_initial, 1, 0) 
+        points_initial = numpy.rollaxis(points_initial, 2, 1)  
+        position_initial = points_initial[0]
+
+        max = numpy.max(position_initial)
+        min = numpy.min(position_initial)
 
         position = (position - min)/(max - min)
         position = 0.5*(2.0*position - 1.0)

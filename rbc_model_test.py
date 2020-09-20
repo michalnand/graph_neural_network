@@ -28,9 +28,15 @@ while True:
     #proces Euler solver
     data.step(force)
 
+    print("center_of_mass = ", data.get_center_of_mass())
+    print("volume = ", data.get_volume())
+    print("\n\n\n")
+
     #render output using opengl
     points = data.x.to("cpu").detach().numpy()
+    points_initial = data.x_initial.to("cpu").detach().numpy()
+    
     edges  = data.edge_index.to("cpu").detach().numpy()
-    window.render(points, edges)
+    window.render(points, points_initial, edges)
 
     steps+= 1
