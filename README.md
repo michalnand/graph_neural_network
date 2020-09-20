@@ -1,2 +1,58 @@
-# graph_neural_network
-graph nn experiments
+# extraordinary simple red blood cell model using graph neural networks
+
+## model loading and euler dif equation solver test
+
+![](doc/images/random_force.gif)
+
+
+- sphere model is loaded from obj file (86 polygons), using **libs_common.obj_model**
+- obj model is converted to graph NN daata format, using **libs_common.physical_model**
+- random force is applied on model
+- and result is rendered
+
+**rbc_model_test.py**
+```python
+import libs_common
+import torch
+
+#load obj model
+obj_model = libs_common.ObjModel("./models_obj/sphere_86.obj")
+#obj_model = libs_common.ObjModel("./models_obj/sphere_960.obj")
+
+#random noise for position or velocity
+randomizer = libs_common.Randomizer(sigma_position = 0.03, sigma_velocity = 0.03)
+
+#create data
+data = libs_common.PhysicalModel(obj_model.points, obj_model.polygons, randomizer=randomizer) 
+
+#visualisation
+window = libs_common.RenderModel()
+
+
+steps = 0
+
+while True:
+    if steps%500 == 0:
+        #apply randomizer
+        data.reset()   
+
+    #generate random force
+    force  = torch.randn(data.points_count, 3)
+
+    #proces Euler solver
+    data.step(force)
+
+    #render output using opengl
+    points = data.x.to("cpu").detach().numpy()
+    edges  = data.edge_index.to("cpu").detach().numpy()
+    window.render(points, edges)
+
+    steps+= 1
+```
+
+
+## dependences
+
+```bash
+$pip3 install numpy torch torch_geometric torch_sparse torch_scatter PyOpenGL glfw
+```

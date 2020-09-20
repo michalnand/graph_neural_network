@@ -1,0 +1,91 @@
+import torch
+from torch_geometric.datasets import Planetoid
+
+import networkx
+import numpy
+import matplotlib.pyplot as plt
+
+from torchviz import make_dot
+
+
+import models.model_0
+
+def plot_dataset(dataset):
+    edges_raw = dataset.data.edge_index.numpy()
+    edges = [(x, y) for x, y in zip(edges_raw[0, :], edges_raw[1, :])]
+    labels = dataset.data.y.numpy()
+
+    G = networkx.Graph()
+    G.add_nodes_from(list(range(numpy.max(edges_raw))))
+    G.add_edges_from(edges)
+    plt.subplot(111)
+    options = {
+                'node_size': 30,
+                'width': 0.2,
+    }
+    networkx.draw(G, with_labels=False, node_color=labels.tolist(), cmap=plt.cm.tab10, font_weight='bold', **options)
+    plt.show()
+
+def test(data, model, train):
+    correct = 0
+    pred    = model(data).max(dim=1)[1]
+
+    if train:
+        correct += pred[data.train_mask].eq(data.y[data.train_mask]).sum().item()
+        return correct / (len(data.y[data.train_mask]))
+    else:
+        correct += pred[data.test_mask].eq(data.y[data.test_mask]).sum().item()
+        return correct / (len(data.y[data.test_mask]))
+
+
+def to_one_hot(labels, classes_count):
+    result = torch.eye(classes_count) 
+    result = result[labels] 
+
+    result = result.to(labels.device)
+
+    return result
+
+def train(dataset, model, epoch_count = 10, learning_rate=0.01):
+
+    data = dataset[0].to(model.device)
+
+    print(data)
+    return
+    optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate, weight_decay=learning_rate*0.01)
+
+    for epoch in range(epoch_count):
+        
+        optimizer.zero_grad()
+
+        predicted_y = model(data)
+        target_y    = to_one_hot(data.y, 7)
+
+
+        loss = (target_y - predicted_y)**2
+        loss = loss.mean()
+        
+        loss.backward()
+        optimizer.step()
+
+        #make_dot(loss).render("model", format="png")
+
+        train_acc   = test(data, model, train=True)
+        test_acc    = test(data, model, train=False)
+
+        print("epoch = ", epoch, loss, 100.0*train_acc, 100.0*test_acc)
+
+dataset = Planetoid(root='./dataset/', name='Cora')
+#plot_dataset(dataset)
+
+
+features_count = dataset.num_node_features
+classes_count  = dataset.num_classes
+
+print(features_count, classes_count)
+
+model = models.model_0.Create(features_count, classes_count)
+
+
+train(dataset, model, epoch_count=100, learning_rate=0.01)
+
