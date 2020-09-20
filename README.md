@@ -8,10 +8,11 @@
 - sphere model is loaded from obj file (86 polygons), using **libs_common.obj_model**
 - obj model is converted to graph NN daata format, using **libs_common.physical_model**
 - random force is applied on model
+- after 500 steps, model is reloaded and add new noise from randomizer
 - and result is rendered
 
-**rbc_model_test.py**
 ```python
+#./rbc_model_test.py
 import libs_common
 import torch
 
