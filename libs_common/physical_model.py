@@ -15,77 +15,81 @@ class PhysicalModel:
         self.in_features_count  = 3*3
         self.out_features_count = 3
     
-        print("points_shape     = ",  self.x.shape)
+        print("position_shape     = ",  self.position.shape)
         print("edges_shape      = ",  self.edge_index.shape)
         print("in_features_count= ",  self.in_features_count)
         print("out_features_count= ", self.out_features_count)
 
 
     def _compute_points(self, points, position, velocity):
-        self.x_initial = torch.zeros((self.points_count, 4, 3), dtype=torch.float)
-        self.x_initial.to(self.device)
+        self.position_initial = torch.zeros((self.points_count, 3), dtype=torch.float)
+        self.position_initial.to(self.device)
+
+        self.velocity_initial = torch.zeros((self.points_count, 3), dtype=torch.float)
+        self.velocity_initial.to(self.device)
+
+        self.force_initial = torch.zeros((self.points_count, 3), dtype=torch.float)
+        self.force_initial.to(self.device)
         
         for i in range(self.points_count):
-            self.x_initial[i][0][0] = points[i][0]
-            self.x_initial[i][0][1] = points[i][1]
-            self.x_initial[i][0][2] = points[i][2]
+            self.position_initial[i][0] = points[i][0]
+            self.position_initial[i][1] = points[i][1]
+            self.position_initial[i][2] = points[i][2]
 
-            self.x_initial[i][1][0] = velocity[0]
-            self.x_initial[i][1][1] = velocity[1]
-            self.x_initial[i][1][2] = velocity[2]
+            self.velocity_initial[i][0] = velocity[0]
+            self.velocity_initial[i][1] = velocity[1]
+            self.velocity_initial[i][2] = velocity[2]
 
-            self.x_initial[i][2][0] = 0.0
-            self.x_initial[i][2][1] = 0.0
-            self.x_initial[i][2][2] = 0.0
+            self.force_initial[i][0] = 0.0
+            self.force_initial[i][1] = 0.0
+            self.force_initial[i][2] = 0.0
 
     def reset(self):
-        self.x = self.x_initial.clone()
+        self.position   = self.position_initial.clone()
+        self.velocity   = self.velocity_initial.clone()
+        self.force      = self.force_initial.clone()
 
         if self.randomizer is not None:
             self.randomizer.next()
+
+            scale = 1.0 #self.randomizer.get_scale()
  
             for i in range(self.points_count):
                 position_noise = self.randomizer.get_position()
                 velocity_noise = self.randomizer.get_velocity()
 
-                self.x[i][0][0]+= position_noise[0]
-                self.x[i][0][1]+= position_noise[1]
-                self.x[i][0][2]+= position_noise[2]
-
-                self.x[i][1][0]+= velocity_noise[0]
-                self.x[i][1][1]+= velocity_noise[1]
-                self.x[i][1][2]+= velocity_noise[2]
-
+                self.position[i][0] = (self.position[i][0] + position_noise[0])*scale
+                self.position[i][1] = (self.position[i][1] + position_noise[1])*scale
+                self.position[i][2] = (self.position[i][2] + position_noise[2])*scale
+                
+                self.velocity[i][0] = (self.velocity[i][0] + velocity_noise[0])*scale
+                self.velocity[i][1] = (self.velocity[i][1] + velocity_noise[1])*scale
+                self.velocity[i][2] = (self.velocity[i][2] + velocity_noise[2])*scale
+                 
     def step(self, force, dt = 0.01):
-        self.x = torch.transpose(self.x, 1, 0)
+        self.velocity = self.velocity + force*dt
+        self.position = self.position + self.velocity*dt
 
-        self.x[2] = force.clone()
-        self.x[1] = self.x[1] + self.x[2]*dt
-        self.x[0] = self.x[0] + self.x[1]*dt
- 
-        self.x = torch.transpose(self.x, 0, 1)
  
     def get_center_of_mass(self):
 
-        x = torch.transpose(self.x, 1, 0)
-
-        position = x[0].mean(dim=0)
-        velocity = x[1].mean(dim=0)
-        force    = x[2].mean(dim=0)
+        position = self.position.mean(dim=0)
+        velocity = self.velocity.mean(dim=0)
+        force    = self.force.mean(dim=0)
 
         return position, velocity, force
 
 
     def get_volume(self):
+
         center, _, _ = self.get_center_of_mass()
 
-        position = torch.transpose(self.x, 1, 0)[0]
-
-        position = position - center
+        position = self.position - center.detach()
 
         v = torch.norm(position, dim=1)**3
 
         volume = v.mean()
+
 
         return volume
 
@@ -93,9 +97,30 @@ class PhysicalModel:
         #TODO
         return 0
 
+    #https://computergraphics.stackexchange.com/questions/1718/what-is-the-simplest-way-to-compute-principal-curvature-for-a-mesh-triangle
     def get_curvature(self):
-        #TODO
-        return 0
+        center, _, _ = self.get_center_of_mass()
+
+        edges_count = self.edge_index.shape[1]
+
+        curvature = torch.zeros(edges_count).to(self.device)
+
+        for i in range(edges_count):  
+            pa_idx = self.edge_index[0][i]
+            pb_idx = self.edge_index[1][i]
+
+            pa = self.position[pa_idx]
+            pb = self.position[pb_idx]
+
+            na = self.position[pa_idx] - center
+            nb = self.position[pb_idx] - center
+
+            print(pa - pb, na - nb)
+
+            curvature[i] = torch.norm(pa - pb)/torch.norm(na - nb)
+
+
+        return curvature.mean()
 
 
 

@@ -17,3 +17,6 @@ class Randomizer:
 
     def get_velocity(self):
         return self.sigma_velocity*numpy.random.randn(self.dims) + self.velocity_offset
+
+    def get_scale(self, min = 0.1, max = 1.0):
+        return numpy.random.rand()*(max - min) + min

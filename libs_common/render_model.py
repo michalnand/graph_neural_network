@@ -34,7 +34,7 @@ class RenderModel:
         return 0
 
     
-    def render(self, points, points_initial, edges):
+    def render(self, points, points_initial, edges, color = [1.0, 0.0, 0.0]):
         aspect = self.width/self.height
         glViewport(0, 0, 2*self.width, 2*self.height)
         glMatrixMode(GL_PROJECTION)
@@ -48,25 +48,20 @@ class RenderModel:
         glLoadIdentity()
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
-        glClearColor(0, 0, 0, 0)
+        glClearColor(1, 1, 1, 0)
         
 
-        self._render(points, points_initial, edges)
+        self._render(points, points_initial, edges, color)
 
         glfw.swap_buffers(self.window)
         glfw.poll_events()
 
         return glfw.window_should_close(self.window)
 
-    def _render(self, points, points_initial, edges):
+    def _render(self, points, points_initial, edges, color):
         
-        points = numpy.rollaxis(points, 1, 0) 
-        points = numpy.rollaxis(points, 2, 1)  
-        position = points[0]
-
-        points_initial = numpy.rollaxis(points_initial, 1, 0) 
-        points_initial = numpy.rollaxis(points_initial, 2, 1)  
-        position_initial = points_initial[0]
+        position         = numpy.transpose(points)
+        position_initial = numpy.transpose(points_initial)
 
         max = numpy.max(position_initial)
         min = numpy.min(position_initial)
@@ -76,9 +71,8 @@ class RenderModel:
 
         glBegin(GL_LINES) 
 
-        glColor3f(1.0, 1.0, 1.0) 
-
-        
+        glColor3f(0.9*color[0], 0.9*color[1], 0.9*color[2]) 
+ 
         for i in range(edges.shape[1]):
             idx_a = edges[0][i]
             idx_b = edges[1][i]
@@ -95,4 +89,18 @@ class RenderModel:
             glVertex3f(xb, yb, zb)
         
         glEnd()
+
+        glBegin(GL_POINTS) 
+
+        glColor3f(color[0], color[1], color[2]) 
+        
+        for i in range(points.shape[1]):
+            xa = position[0][i]
+            ya = position[1][i] 
+            za = position[2][i]
+
+            glVertex3f(xa, ya, za)
+
+        glEnd()
+
 

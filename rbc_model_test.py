@@ -33,8 +33,8 @@ while True:
     print("\n\n\n")
 
     #render output using opengl
-    points = data.x.to("cpu").detach().numpy()
-    points_initial = data.x_initial.to("cpu").detach().numpy()
+    points          = data.position.to("cpu").detach().numpy()
+    points_initial  = data.position_initial.to("cpu").detach().numpy()
     
     edges  = data.edge_index.to("cpu").detach().numpy()
     window.render(points, points_initial, edges)
