@@ -1,5 +1,12 @@
 # extraordinary simple red blood cell model using graph neural networks
 
+
+## simple auto-dif model of throwing object into target
+
+![](doc/images/sphere_throw.gif)
+
+
+
 ## model loading and euler dif equation solver test
 
 ![](doc/images/random_force.gif)
